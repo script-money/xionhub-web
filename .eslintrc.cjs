@@ -6,6 +6,7 @@ const config = {
   },
   plugins: ["@typescript-eslint"],
   extends: [
+    "@burnt-labs/eslint-config-custom/next",
     "next/core-web-vitals",
     "plugin:@typescript-eslint/recommended-type-checked",
     "plugin:@typescript-eslint/stylistic-type-checked",
