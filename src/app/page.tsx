@@ -5,8 +5,8 @@ import {
   Abstraxion,
   useAbstraxionAccount,
   useAbstraxionSigningClient,
+  useModal,
 } from "@burnt-labs/abstraxion";
-import "@burnt-labs/ui/styles.css";
 import { hubContractAddress } from "./layout";
 import type { ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { EncodeObject } from "@cosmjs/proto-signing";
@@ -27,7 +27,11 @@ export default function Page(): JSX.Element {
   const { client } = useAbstraxionSigningClient();
 
   // General state hooks
-  const [isOpen, setIsOpen] = useState(false);
+  const [, setShowModal]: [
+    boolean,
+    React.Dispatch<React.SetStateAction<boolean>>,
+  ] = useModal();
+
   const [loading, setLoading] = useState(false);
   const [executeResult, setExecuteResult] = useAtom(executeResultAtom);
   const [isInProgress, setInProgress] = useAtom(inProgressAtom);
@@ -35,14 +39,14 @@ export default function Page(): JSX.Element {
   const blockExplorerUrl = `https://explorer.burnt.com/xion-testnet-1/tx/${executeResult?.transactionHash}`;
 
   async function createHub(
-    name: string,
-    payment: { amount: string; denom: string },
+    hub_name: string,
+    need_pay: { amount: string; denom: string },
   ) {
     setLoading(true);
     const msg = {
       create_hub: {
-        name,
-        payment,
+        hub_name,
+        need_pay,
       },
     };
 
@@ -84,7 +88,7 @@ export default function Page(): JSX.Element {
               typeUrl: "/cosmwasm.wasm.v1.MaxCallsLimit",
               value: MaxCallsLimit.encode(
                 MaxCallsLimit.fromPartial({
-                  remaining: 255n,
+                  remaining: 255,
                 }),
               ).finish(),
             },
@@ -102,7 +106,7 @@ export default function Page(): JSX.Element {
           value: contractExecutionAuthorizationValue,
         },
         expiration: {
-          seconds: BigInt(timestampThreeMonthsFromNow),
+          seconds: timestampThreeMonthsFromNow,
         },
       },
       grantee,
@@ -115,7 +119,7 @@ export default function Page(): JSX.Element {
     };
   };
 
-  const grant = async (grantee: string) => {
+  const grant = async () => {
     setInProgress(true);
     if (!client) {
       throw new Error("no client");
@@ -151,7 +155,7 @@ export default function Page(): JSX.Element {
       </h1>
       <button
         onClick={() => {
-          setIsOpen(true);
+          setShowModal(true);
         }}
       >
         {account.bech32Address ? (
@@ -166,7 +170,7 @@ export default function Page(): JSX.Element {
         <button
           disabled={loading}
           onClick={() => {
-            void grant(account.bech32Address);
+            void grant();
           }}
         >
           {loading ? "LOADING..." : "GRANT"}
@@ -176,16 +180,15 @@ export default function Page(): JSX.Element {
         <button
           disabled={loading}
           onClick={() => {
-            void createHub("Test Hub", { amount: "100", denom: "uxion" });
+            void createHub("Test Hub", { amount: "0", denom: "uxion" });
           }}
         >
           {loading ? "LOADING..." : "CREATE HUB"}
         </button>
       ) : null}
       <Abstraxion
-        isOpen={isOpen}
         onClose={() => {
-          setIsOpen(false);
+          setShowModal(false);
         }}
       />
       {executeResult ? (

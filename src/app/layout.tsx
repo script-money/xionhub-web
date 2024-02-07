@@ -2,11 +2,8 @@
 import "~/styles/globals.css";
 import { AbstraxionProvider } from "@burnt-labs/abstraxion";
 
-import "@burnt-labs/abstraxion/styles.css";
-import "@burnt-labs/ui/styles.css";
-
 export const hubContractAddress =
-  "xion1lwg7ka24j9dflaysfw9qe5gwlz7zgknsdp5gndl3lqx52eqlq4nsnlraql";
+  "xion1dcldjxd56xekpx05efjg2wfzx3pa4s26pgrhfcca0z3k7u8h3jeq70sjnf";
 
 export default function RootLayout({
   children,
