@@ -13,7 +13,7 @@ export interface HubInfoProps {
   subscribers: Address[];
 }
 
-interface Post {
+export interface Post {
   id: UUID;
   title: String;
   content: String;
