@@ -1,6 +1,6 @@
 import { UUID } from "crypto";
 
-type Address = string;
+export type Address = string;
 
 export interface HubInfoProps {
   creator: Address;
