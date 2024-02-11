@@ -87,6 +87,7 @@ const DraftPage = () => {
   } = useCreatePost(postTitle, postContent, client, account);
 
   const [postCreated, setPostCreated] = useState(false);
+  const [postIndices, setPostIndices] = useState(() => hubInfos.map(() => 0));
 
   // capture create hub error in Effect
   useEffect(() => {
@@ -166,18 +167,24 @@ const DraftPage = () => {
         <div>
           <h1 className="text-3xl">Hub List</h1>
           <div>
-            {hubInfos.map((hub) => (
+            {hubInfos.map((hub, hubIndex) => (
               <HubCover
                 key={hub.creator}
-                isSubscribed={false} // TODO: read subscription status from the contract
+                isSubscribed={hub.subscribers.includes(account.bech32Address)} // TODO: read subscription status from the contract
                 client={client}
                 account={account}
                 hubName={hub.name}
                 creator={hub.creator}
                 payment={`${Number(hub.payment.amount) / 1e6} ${hub.payment.denom}`}
                 subscribers={hub.subscribers.length}
-                firstPostTitle={hub.posts[0]?.title ?? "No Post"}
-                firstPostContent={hub.posts[0]?.content}
+                hubPosts={hub.posts}
+                postIndex={postIndices[hubIndex] ?? 0}
+                setPostIndex={(newIndex) => {
+                  const newPostIndices = [...postIndices];
+                  newPostIndices[hubIndex] = newIndex;
+                  setPostIndices(newPostIndices);
+                }}
+                totalPosts={hub.posts.length}
               />
             ))}
           </div>

@@ -5,13 +5,14 @@ import { extractErrorName } from "~/lib/utils";
 export function useLikePost(postId: string, client: any, account: any) {
   const [error, setError] = useState<string>("");
   const [liked, setLiked] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
 
   const handleLikePost = useCallback(async () => {
     if (!client || !account || account.bech32Address === "") {
       console.error("Not logged in");
       return;
     }
-
+    setLoading(true);
     try {
       const data = await client.execute(
         account.bech32Address,
@@ -28,8 +29,10 @@ export function useLikePost(postId: string, client: any, account: any) {
     } catch (error) {
       const errorMessage = extractErrorName(error as Error);
       setError(errorMessage ?? "unknown error");
+    } finally {
+      setLoading(false); // Reset confirming state after the action is completed or failed
     }
   }, [client, account, postId]);
 
-  return { handleLikePost, liked, error };
+  return { handleLikePost, liked, error, loading };
 }

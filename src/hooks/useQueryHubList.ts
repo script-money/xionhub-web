@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import { XIONHUB_ADDRESS } from "~/constant";
 import { HubInfoProps } from "~/interface";
 
-const useQueryHubList = (client?: any) => {
+const useQueryHubList = (client?: any, account?: any) => {
   const queryHubList = useCallback(
     async (currentPage: number = 1, pageSize: number = 10) => {
       if (!client) {
