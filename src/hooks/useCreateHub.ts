@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import { XIONHUB_ADDRESS } from "~/constant";
-import { extractErrorName } from "~/utils";
+import { extractErrorName } from "~/lib/utils";
 
 export function useCreateHub(client: any, account: any) {
   const nameInputRef = useRef<HTMLInputElement>(null);

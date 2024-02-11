@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import { useCallback, useState } from "react";
 import { XIONHUB_ADDRESS } from "~/constant";
-import { extractErrorName } from "~/utils";
+import { extractErrorName } from "~/lib/utils";
 
 export function useCreatePost(
   title: string,

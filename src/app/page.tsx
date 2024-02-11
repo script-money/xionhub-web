@@ -16,7 +16,8 @@ import {
   MaxCallsLimit,
 } from "cosmjs-types/cosmwasm/wasm/v1/authz";
 import { atom, useAtom } from "jotai";
-import { extractErrorName } from "~/utils";
+import { extractErrorName } from "~/lib/utils";
+import { Button } from "~/components/ui/button"
 
 const executeResultAtom = atom<ExecuteResult | undefined>(undefined);
 const inProgressAtom = atom(false);
@@ -153,7 +154,7 @@ export default function Page(): JSX.Element {
       <h1 className="text-2xl font-bold tracking-tighter text-white">
         ABSTRAXION
       </h1>
-      <button
+      <Button
         onClick={() => {
           setShowModal(true);
         }}
@@ -163,28 +164,28 @@ export default function Page(): JSX.Element {
         ) : (
           "CONNECT"
         )}
-      </button>
-      {account.bech32Address && <button onClick={() => account}></button>}
+      </Button>
+      {account.bech32Address && <Button onClick={() => account}></Button>}
       <p>{account.bech32Address ?? "not connect"}</p>
       {client ? (
-        <button
+        <Button
           disabled={loading}
           onClick={() => {
             void grant();
           }}
         >
           {loading ? "LOADING..." : "GRANT"}
-        </button>
+        </Button>
       ) : null}
       {client ? (
-        <button
+        <Button
           disabled={loading}
           onClick={() => {
             void createHub("Test Hub", { amount: "0", denom: "uxion" });
           }}
         >
           {loading ? "LOADING..." : "CREATE HUB"}
-        </button>
+        </Button>
       ) : null}
       <Abstraxion
         onClose={() => {

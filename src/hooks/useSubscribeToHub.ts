@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { XIONHUB_ADDRESS } from "~/constant";
 import { Address } from "~/interface";
-import { extractErrorName } from "~/utils";
+import { extractErrorName } from "~/lib/utils";
 
 export function useSubscribeToHub(
   hubAddress: Address,
