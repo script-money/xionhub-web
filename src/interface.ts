@@ -15,7 +15,7 @@ export interface HubInfoProps {
 
 export interface Post {
   id: UUID;
-  title: String;
-  content: String;
+  title: string;
+  content: string;
   updated: bigint;
 }

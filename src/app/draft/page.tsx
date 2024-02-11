@@ -19,6 +19,8 @@ import { atom, useAtom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 import { useCreatePost } from "~/hooks/useCreatePost";
 import { HubInfoProps } from "~/interface";
+import { HubCover } from "~/components/hub/hub-cover";
+import { useSubscribeToHub } from "~/hooks/useSubscribeToHub";
 
 const hubInfosAtom = atom<HubInfoProps[]>([]);
 const postTitleAtom = atomWithStorage("title", "");
@@ -165,24 +167,18 @@ const DraftPage = () => {
           <h1 className="text-3xl">Hub List</h1>
           <div>
             {hubInfos.map((hub) => (
-              <div key={hub.creator}>
-                <p>{hub.name}</p>
-                <p>{hub.creator}</p>
-                <p>{hub.payment.amount}</p>
-                <p>{hub.subscribers.length}</p>
-                <p>{hub.posts[0]?.title ?? "No Post"}</p>
-                <p>
-                  {hub.posts[0]?.content
-                    .split("\n")
-                    .map((line, index) => (
-                      <Fragment key={index}>
-                        {line}
-                        <br />
-                      </Fragment>
-                    ))
-                    .slice(0, 100)}{" "}
-                </p>
-              </div>
+              <HubCover
+                key={hub.creator}
+                isSubscribed={false} // TODO: read subscription status from the contract
+                client={client}
+                account={account}
+                hubName={hub.name}
+                creator={hub.creator}
+                payment={`${Number(hub.payment.amount) / 1e6} ${hub.payment.denom}`}
+                subscribers={hub.subscribers.length}
+                firstPostTitle={hub.posts[0]?.title ?? "No Post"}
+                firstPostContent={hub.posts[0]?.content}
+              />
             ))}
           </div>
         </div>

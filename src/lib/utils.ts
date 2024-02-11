@@ -9,3 +9,10 @@ export function extractErrorName(error: Error): string | null | undefined {
   const errorNameMatch = error.message.match(/: ([A-Za-z]+):/);
   return errorNameMatch ? errorNameMatch[1] : null;
 }
+
+export function formatAddress(address: string): string {
+  if (address.length < 13) {
+    return address;
+  }
+  return `${address.slice(0, 8)}......${address.slice(-4)}`;
+}
