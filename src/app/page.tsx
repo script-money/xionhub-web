@@ -17,7 +17,7 @@ import {
 } from "cosmjs-types/cosmwasm/wasm/v1/authz";
 import { atom, useAtom } from "jotai";
 import { extractErrorName } from "~/lib/utils";
-import { Button } from "~/components/ui/button"
+import { Button } from "~/components/ui/button";
 
 const executeResultAtom = atom<ExecuteResult | undefined>(undefined);
 const inProgressAtom = atom(false);

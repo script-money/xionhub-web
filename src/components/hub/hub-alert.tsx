@@ -1,55 +1,71 @@
-import React, { useState, useEffect } from "react";
-import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
+import React, { useEffect } from "react";
+import { atom, useAtom } from "jotai";
 import { CheckIcon, Cross2Icon, GlobeIcon } from "@radix-ui/react-icons";
 
+import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
+
 interface AlertProps {
-  error?: string;
-  isConfirming?: boolean; // Added prop to track confirmation status
+  errorMessage?: string;
+  isConfirming?: boolean;
 }
 
-export const HubAlert = ({ error, isConfirming = false }: AlertProps) => {
-  const [showAlert, setShowAlert] = useState<boolean>(false);
+export const showAlertAtom = atom<AlertProps>({
+  errorMessage: "",
+  isConfirming: false,
+});
+
+export const HubAlert = () => {
+  const [showAlert, setShowAlert] = useAtom(showAlertAtom);
 
   useEffect(() => {
-    if (error || isConfirming) {
-      setShowAlert(true); // Show alert when there is an error or is confirming
-    } else {
-      const timer = setTimeout(() => {
-        setShowAlert(false); // Hide alert after 3 seconds if there is no error and not confirming
-      }, 3000);
-      return () => clearTimeout(timer);
+    let timer: NodeJS.Timeout;
+    if (showAlert.errorMessage) {
+      timer = setTimeout(() => {
+        setShowAlert({ errorMessage: "", isConfirming: false });
+      }, 5000);
     }
-  }, [error, isConfirming]);
+    return () => timer && clearTimeout(timer);
+  }, [showAlert.errorMessage]);
 
-  const isError = error != null && error !== "";
-
-  if (!showAlert) return null;
+  const isError = showAlert.errorMessage !== "";
+  const isConfirming = showAlert.isConfirming;
 
   let alertTitle;
   let IconComponent;
   if (isConfirming) {
     alertTitle = "Confirming...";
-    IconComponent = GlobeIcon; // Use the loading icon for confirming state
-  } else if (error) {
+    IconComponent = GlobeIcon;
+  } else if (isError) {
     alertTitle = "Broadcast failed";
-    IconComponent = Cross2Icon; // Use the cross icon for error state
+    IconComponent = Cross2Icon;
   } else {
     alertTitle = "Broadcast success";
-    IconComponent = CheckIcon; // Use the check icon for success state
+    IconComponent = CheckIcon;
   }
 
-  // Apply color based on the state
-  const titleColor = isError ? "text-red-500" : "text-green-500";
+  const titleColor = isConfirming
+    ? "text-black"
+    : isError
+      ? "text-red-500"
+      : "text-green-500";
 
   return (
-    <Alert
-      variant={isError ? "destructive" : "default"}
-      className="fixed right-0 top-0 z-50 m-8 w-[200px]"
-    >
-      <AlertTitle className={isConfirming ? "" : titleColor}>
-        <IconComponent className="mr-2 inline-block" /> {alertTitle}
-      </AlertTitle>
-      {isError && <AlertDescription>{error}</AlertDescription>}
-    </Alert>
+    <>
+      {(isConfirming || isError) && (
+        <Alert
+          variant={
+            isConfirming ? "default" : isError ? "destructive" : "default"
+          }
+          className="fixed right-0 top-0 z-50 m-8 w-[200px]"
+        >
+          <AlertTitle className={titleColor}>
+            <IconComponent className="mr-2 inline-block" /> {alertTitle}
+          </AlertTitle>
+          {isError && !isConfirming && (
+            <AlertDescription>{showAlert.errorMessage}</AlertDescription>
+          )}
+        </Alert>
+      )}
+    </>
   );
 };

@@ -16,11 +16,12 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
-import { Fragment } from "react";
+import { Fragment, useEffect } from "react";
 import { useSubscribeToHub } from "~/hooks/useSubscribeToHub";
-import { HubAlert } from "./hub-alert";
+import { showAlertAtom } from "./hub-alert";
 import { useLikePost } from "~/hooks/useLikePost";
 import { Post } from "~/interface";
+import { useSetAtom } from "jotai";
 
 type CardProps = React.ComponentProps<typeof Card>;
 type HubCoverProps = CardProps & {
@@ -63,7 +64,7 @@ export function HubCover({
 
   let handleLikePost: () => Promise<void> | undefined;
   let liked = false;
-  let likeError;
+  let likeError = "";
   let likeIsLoading = false;
 
   if (hubPosts && hubPosts.length > 0) {
@@ -86,14 +87,25 @@ export function HubCover({
     ));
   };
 
+  const setShowAlert = useSetAtom(showAlertAtom);
+
+  useEffect(() => {
+    if (subscribeLoading || subscribeError) {
+      setShowAlert({
+        errorMessage: subscribeError,
+        isConfirming: subscribeLoading,
+      });
+    }
+    if (likeIsLoading || likeError) {
+      setShowAlert({
+        errorMessage: likeError,
+        isConfirming: likeIsLoading,
+      });
+    }
+  }, [subscribeLoading, subscribeError, likeIsLoading, likeError]);
+
   return (
-    <Card className={cn("w-[532px]", className)} {...props}>
-      {(subscribeError || subscribeLoading) && (
-        <HubAlert error={subscribeError} isConfirming={subscribeLoading} />
-      )}
-      {(firstPost || likeIsLoading) && (
-        <HubAlert error={likeError} isConfirming={likeIsLoading} />
-      )}
+    <Card className={cn("w-full md:w-[532px]", className)} {...props}>
       <CardHeader>
         <CardTitle>{hubName}</CardTitle>
         <div className="flex justify-between">
