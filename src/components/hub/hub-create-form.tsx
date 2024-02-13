@@ -21,6 +21,7 @@ import { Input } from "~/components/ui/input";
 
 const formSchema = z.object({
   hubName: z.string().min(2).max(50),
+  fee: z.number().min(0),
 });
 
 const HubCreateForm: React.FC<{ client: any; account: any }> = ({
@@ -39,6 +40,7 @@ const HubCreateForm: React.FC<{ client: any; account: any }> = ({
   const form = useForm<z.infer<typeof formSchema>>({
     defaultValues: {
       hubName: "",
+      fee: 0,
     },
     resolver: zodResolver(formSchema),
   });
@@ -49,14 +51,14 @@ const HubCreateForm: React.FC<{ client: any; account: any }> = ({
     );
   };
 
-  const isSubmitDisabled = !form.formState.isValid || loading;
+  const isSubmitDisabled = !form.formState.isValid;
 
   return (
     <form
-      className="container flex items-center justify-center "
+      className="container flex items-center justify-center"
       onSubmit={form.handleSubmit(onSubmit)}
     >
-      <Card className="w-full p-2 md:w-[618px]">
+      <Card className="w-full p-4 md:w-[618px]">
         <h1 className="text-3xl">Create Hub</h1>
         <Form {...form}>
           <FormField
@@ -68,14 +70,33 @@ const HubCreateForm: React.FC<{ client: any; account: any }> = ({
                 <FormControl>
                   <Input {...field} />
                 </FormControl>
+                <FormDescription>Hub name 2-50 letters</FormDescription>
+                <FormMessage>{fieldState.error?.message}</FormMessage>
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="fee"
+            render={({ field, fieldState }) => (
+              <FormItem>
+                <FormLabel>Subscribe Fee</FormLabel>
+                <FormControl>
+                  <Input {...field} type="number" placeholder="0 uxion" />
+                </FormControl>
                 <FormDescription>
-                  This is public display hub name.
+                  Cannot set hub subscription fee in testnet
                 </FormDescription>
                 <FormMessage>{fieldState.error?.message}</FormMessage>
               </FormItem>
             )}
           />
-          <Button type="submit" variant="outline" disabled={isSubmitDisabled}>
+          <Button
+            className="mt-2"
+            type="submit"
+            variant="outline"
+            disabled={isSubmitDisabled}
+          >
             Create Hub
           </Button>
         </Form>
