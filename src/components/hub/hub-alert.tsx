@@ -5,11 +5,13 @@ import { CheckIcon, Cross2Icon, GlobeIcon } from "@radix-ui/react-icons";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 
 interface AlertProps {
+  isSuccess: boolean;
   errorMessage?: string;
   isConfirming?: boolean;
 }
 
 export const showAlertAtom = atom<AlertProps>({
+  isSuccess: false,
   errorMessage: "",
   isConfirming: false,
 });
@@ -19,13 +21,17 @@ export const HubAlert = () => {
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
-    if (showAlert.errorMessage) {
+    if (showAlert.errorMessage || showAlert.isSuccess) {
       timer = setTimeout(() => {
-        setShowAlert({ errorMessage: "", isConfirming: false });
+        setShowAlert((prev) => ({
+          ...prev,
+          errorMessage: "",
+          isSuccess: false,
+        }));
       }, 5000);
     }
     return () => timer && clearTimeout(timer);
-  }, [showAlert.errorMessage]);
+  }, [showAlert, setShowAlert]);
 
   const isError = showAlert.errorMessage !== "";
   const isConfirming = showAlert.isConfirming;
@@ -38,9 +44,11 @@ export const HubAlert = () => {
   } else if (isError) {
     alertTitle = "Broadcast failed";
     IconComponent = Cross2Icon;
-  } else {
+  } else if (showAlert.isSuccess) {
     alertTitle = "Broadcast success";
     IconComponent = CheckIcon;
+  } else {
+    return null;
   }
 
   const titleColor = isConfirming
@@ -51,7 +59,7 @@ export const HubAlert = () => {
 
   return (
     <>
-      {(isConfirming || isError) && (
+      {(isConfirming || isError || showAlert.isSuccess) && (
         <Alert
           variant={
             isConfirming ? "default" : isError ? "destructive" : "default"

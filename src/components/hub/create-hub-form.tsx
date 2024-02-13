@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useSetAtom } from "jotai";
+import { useAtom, useSetAtom } from "jotai";
 
 import { useCreateHub } from "~/hooks/useCreateHub";
 import { showAlertAtom } from "./hub-alert";
@@ -18,22 +18,29 @@ import {
 } from "~/components/ui/form";
 import { Card } from "../ui/card";
 import { Input } from "~/components/ui/input";
+import { Cross1Icon } from "@radix-ui/react-icons";
+import { showCreateHubAtom } from "~/atom";
 
 const formSchema = z.object({
   hubName: z.string().min(2).max(50),
   fee: z.number().min(0),
 });
 
-const HubCreateForm: React.FC<{ client: any; account: any }> = ({
+const CreateHubForm: React.FC<{ client: any; account: any }> = ({
   client,
   account,
 }) => {
   const { handleCreateHub, error, loading } = useCreateHub(client, account);
   const setShowAlert = useSetAtom(showAlertAtom);
+  const [showCreateHub, setShowCreateHub] = useAtom(showCreateHubAtom);
 
   useEffect(() => {
     if (loading || error) {
-      setShowAlert({ errorMessage: error, isConfirming: loading });
+      setShowAlert({
+        isSuccess: false,
+        errorMessage: error,
+        isConfirming: loading,
+      });
     }
   }, [loading, error]);
 
@@ -58,7 +65,15 @@ const HubCreateForm: React.FC<{ client: any; account: any }> = ({
       className="container flex items-center justify-center"
       onSubmit={form.handleSubmit(onSubmit)}
     >
-      <Card className="w-full p-4 md:w-[618px]">
+      <Card className="relative w-full p-4 md:w-[618px]">
+        <Button
+          variant="outline"
+          size="icon"
+          className="absolute right-2 top-2"
+          onClick={() => setShowCreateHub(false)}
+        >
+          <Cross1Icon className="h-4 w-4" />
+        </Button>
         <h1 className="text-3xl">Create Hub</h1>
         <Form {...form}>
           <FormField
@@ -80,9 +95,14 @@ const HubCreateForm: React.FC<{ client: any; account: any }> = ({
             name="fee"
             render={({ field, fieldState }) => (
               <FormItem>
-                <FormLabel>Subscribe Fee</FormLabel>
+                <FormLabel>Subscribe Fee (uxion)</FormLabel>
                 <FormControl>
-                  <Input {...field} type="number" placeholder="0 uxion" />
+                  <Input
+                    {...field}
+                    type="number"
+                    placeholder="0 uxion"
+                    disabled
+                  />
                 </FormControl>
                 <FormDescription>
                   Cannot set hub subscription fee in testnet
@@ -105,4 +125,4 @@ const HubCreateForm: React.FC<{ client: any; account: any }> = ({
   );
 };
 
-export default HubCreateForm;
+export default CreateHubForm;

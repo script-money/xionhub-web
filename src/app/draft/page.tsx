@@ -6,95 +6,53 @@ import {
   useModal,
 } from "@burnt-labs/abstraxion";
 import "@burnt-labs/ui/dist/index.css";
-import { Fragment, useEffect, useMemo, useState } from "react";
-import useQueryHubList from "~/hooks/useQueryHubList";
-import { useCreateHub } from "~/hooks/useCreateHub";
-
-// Import the Slate editor factory.
-import { createEditor, BaseEditor, Node, Descendant } from "slate";
-import { Slate, Editable, withReact } from "slate-react";
-import { ReactEditor } from "slate-react";
-import { withHistory } from "slate-history";
-import { atom, useAtom } from "jotai";
-import { atomWithStorage } from "jotai/utils";
+import { useEffect, useLayoutEffect, useState } from "react";
+import { useAtom } from "jotai";
 import Image from "next/image";
-import { useCreatePost } from "~/hooks/useCreatePost";
-import { HubInfoProps } from "~/interface";
+
+import useQueryHubList from "~/hooks/useQueryHubList";
 import { HubCover } from "~/components/hub/hub-cover";
-import { useSubscribeToHub } from "~/hooks/useSubscribeToHub";
 import { formatAddress } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
-import HubCreateForm from "~/components/hub/hub-create-form";
-import { HubAlert, showAlertAtom } from "~/components/hub/hub-alert";
-
-const hubInfosAtom = atom<HubInfoProps[]>([]);
-const postTitleAtom = atomWithStorage("title", "");
-const postContentAtom = atomWithStorage("content", "");
-const showCreatePostAtom = atom<boolean>(false);
-const showCreateHubAtom = atom<boolean>(true);
-
-// Define a serializing function that takes a value and returns a string.
-const serialize = (value: Descendant[]) => {
-  return (
-    value
-      // Return the string content of each paragraph in the value's children.
-      .map((n) => Node.string(n))
-      // Join them all with line breaks denoting paragraphs.
-      .join("\n")
-  );
-};
-
-// Define a deserializing function that takes a string and returns a value.
-const deserialize = (str: string | null) => {
-  if (str == null) {
-    return [{ children: [{ text: "" }] }] as Descendant[];
-  }
-  // Return a value array of children derived by splitting the string.
-  return str.split("\n").map((line) => {
-    return {
-      children: [{ text: line }],
-    } as Descendant;
-  });
-};
-
-type CustomElement = { type: "paragraph"; children: CustomText[] };
-type CustomText = { text: string };
-
-declare module "slate" {
-  interface CustomTypes {
-    Editor: BaseEditor & ReactEditor;
-    Element: CustomElement;
-    Text: CustomText;
-  }
-}
+import CreateHubForm from "~/components/hub/create-hub-form";
+import { HubAlert } from "~/components/hub/hub-alert";
+import CreatePostForm from "~/components/hub/create-post-form";
+import {
+  hasCacheAccountAtom,
+  hubInfosAtom,
+  showCreateHubAtom,
+  showCreatePostAtom,
+  userHasHubAtom,
+} from "~/atom";
+import { Rocket } from "lucide-react";
+import { Pencil2Icon } from "@radix-ui/react-icons";
 
 const DraftPage = () => {
   // 先连上账户，然后才会初始化client
-  const { data: account, isConnected } = useAbstraxionAccount();
+  const { data: account } = useAbstraxionAccount();
   const { client } = useAbstraxionSigningClient();
 
   const [hubInfos, setHubInfos] = useAtom(hubInfosAtom);
 
-  const editor = useMemo(() => withHistory(withReact(createEditor())), []);
-
-  const [postTitle, setPostTitle] = useAtom(postTitleAtom);
-  const [postContent, setPostContent] = useAtom(postContentAtom);
   const [showCreatePost, setShowCreatePost] = useAtom(showCreatePostAtom);
   const [showCreateHub, setShowCreateHub] = useAtom(showCreateHubAtom);
-  const [showAlert] = useAtom(showAlertAtom);
+
+  const [userHasHub, setUserHasHub] = useAtom(userHasHubAtom);
+  const [hasCacheAccount, setHasCacheAccount] = useAtom(hasCacheAccountAtom);
 
   const [, setShowModal] = useModal();
 
   const { queryHubList, isQueryingHubs } = useQueryHubList(client);
 
-  const {
-    handleCreatePost,
-    txHash: createPostTxHash,
-    error: createPostError,
-  } = useCreatePost(postTitle, postContent, client, account);
-
-  const [postCreated, setPostCreated] = useState(false);
   const [postIndices, setPostIndices] = useState(() => hubInfos.map(() => 0));
+
+  useLayoutEffect(() => {
+    // first launch page
+    console.log("Initing app");
+    if (localStorage.getItem("xion-authz-granter-account")) {
+      setHasCacheAccount(true);
+    }
+  }, []);
 
   useEffect(() => {
     if (client) {
@@ -103,22 +61,6 @@ const DraftPage = () => {
     }
   }, [client]);
 
-  // capture create hub error in Effect
-  useEffect(() => {
-    if (createPostError) {
-      console.error("createPost error:", createPostError);
-    }
-  }, [createPostError]);
-
-  // Add an effect to listen for changes in the createPostError state
-  // If there is no error, it means the post was created successfully
-  useEffect(() => {
-    if (createPostTxHash) {
-      setPostCreated(true);
-    }
-  }, [createPostTxHash]);
-
-  // TODO: show query automaticly and render the result
   const handleQueryHubs = async () => {
     if (!client) {
       console.log("client is not ready");
@@ -128,6 +70,9 @@ const DraftPage = () => {
       const data = await queryHubList(1, 5);
       if (data) {
         setHubInfos(data);
+        if (data.map((hub) => hub.creator).includes(account.bech32Address)) {
+          setUserHasHub(true);
+        }
         console.log("HubInfoList:", data);
       } else {
         console.log("No data found");
@@ -141,41 +86,8 @@ const DraftPage = () => {
     return (
       <div className="flex h-screen w-full bg-black opacity-75">
         <HubAlert />
-        {showCreateHub && <HubCreateForm client={client} account={account} />}
-        {showCreatePost && (
-          <div className="">
-            <label>Post Title: </label>
-            <input
-              className="ms-1"
-              type="text"
-              placeholder="Post title input"
-              onChange={(e) => setPostTitle(e.target.value)}
-            />
-            <label>Post Content: </label>
-            <Slate
-              editor={editor}
-              initialValue={deserialize(postContent)} // Changed from initialValue to value for controlled component
-              onChange={(value) => {
-                const isAstChange = editor.operations.some(
-                  (op) => "set_selection" !== op.type,
-                );
-                if (isAstChange) {
-                  setPostContent(serialize(value));
-                }
-              }}
-            >
-              <Editable />
-            </Slate>
-            <button onClick={handleCreatePost} className="border text-xl">
-              Create Post
-            </button>
-            {postCreated && (
-              <div className="text-green-500">
-                Post created successfully! Hash: {createPostTxHash}
-              </div>
-            )}
-          </div>
-        )}
+        {showCreateHub && <CreateHubForm client={client} account={account} />}
+        {showCreatePost && <CreatePostForm client={client} account={account} />}
       </div>
     );
   }
@@ -198,13 +110,47 @@ const DraftPage = () => {
         />
         <div className="ml-auto flex justify-end space-x-2">
           {account.bech32Address ? (
-            <Button
-              variant="secondary"
-              className="border text-xl"
-              onClick={() => setShowModal(true)}
-            >
-              {formatAddress(account.bech32Address)}
-            </Button>
+            <>
+              {!userHasHub ? (
+                <Button
+                  variant="ghost"
+                  className="hidden border text-xl md:block" // Hide on small screens
+                  onClick={() => setShowCreateHub(true)}
+                >
+                  Create Hub
+                </Button>
+              ) : (
+                <Button
+                  variant="ghost"
+                  className="hidden border text-xl md:block" // Hide on small screens
+                  onClick={() => setShowCreatePost(true)}
+                >
+                  Create Post
+                </Button>
+              )}
+              {!userHasHub ? (
+                <Button
+                  className="fixed bottom-4 right-4 h-16 w-16 rounded-full border md:hidden" // Show as floating button on small screens
+                  onClick={() => setShowCreateHub(true)}
+                >
+                  <Rocket name="create-hub" />
+                </Button>
+              ) : (
+                <Button
+                  className="fixed bottom-4 right-4 h-16 w-16 rounded-full border md:hidden" // Show as floating button on small screens
+                  onClick={() => setShowCreatePost(true)}
+                >
+                  <Pencil2Icon name="create-post" />
+                </Button>
+              )}
+              <Button
+                variant="secondary"
+                className="border text-xl"
+                onClick={() => setShowModal(true)}
+              >
+                {formatAddress(account.bech32Address)}
+              </Button>
+            </>
           ) : (
             <Button
               variant="secondary"
@@ -225,7 +171,7 @@ const DraftPage = () => {
             </div>
           ) : (
             hubInfos.length > 0 && (
-              <div className="container flex flex-col gap-y-2">
+              <div className="container flex flex-col items-center gap-y-2">
                 {hubInfos.map((hub, hubIndex) => (
                   <HubCover
                     key={hub.creator}
@@ -255,9 +201,7 @@ const DraftPage = () => {
       ) : (
         <div className="flex h-screen w-full items-center justify-center">
           <h2 className="text-3xl">
-            {localStorage.getItem("xion-authz-granter-account")
-              ? "Logging in, please wait"
-              : "Please login first"}
+            {hasCacheAccount ? "Logging in, please wait" : "Please login first"}
           </h2>
         </div>
       )}

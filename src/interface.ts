@@ -1,4 +1,14 @@
 import { UUID } from "crypto";
+import { BaseEditor } from "slate";
+import { ReactEditor } from "slate-react";
+
+declare module "slate" {
+  interface CustomTypes {
+    Editor: BaseEditor & ReactEditor;
+    Element: CustomElement;
+    Text: CustomText;
+  }
+}
 
 export type Address = string;
 
@@ -19,3 +29,6 @@ export interface Post {
   content: string;
   updated: bigint;
 }
+
+export type CustomElement = { type: "paragraph"; children: CustomText[] };
+export type CustomText = { text: string };
