@@ -34,7 +34,7 @@ export const useCreateHub = (client: any, account: any) => {
         setLoading(false);
       }
     },
-    [client, account, XIONHUB_ADDRESS],
+    [client, account],
   );
 
   return { handleCreateHub, error, loading };

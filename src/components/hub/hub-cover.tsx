@@ -21,7 +21,7 @@ import { useSubscribeToHub } from "~/hooks/useSubscribeToHub";
 import { showAlertAtom } from "./hub-alert";
 import { useLikePost } from "~/hooks/useLikePost";
 import { Post } from "~/interface";
-import { useSetAtom } from "jotai";
+import { useAtom, useSetAtom } from "jotai";
 
 type CardProps = React.ComponentProps<typeof Card>;
 type HubCoverProps = CardProps & {
@@ -53,6 +53,8 @@ export function HubCover({
   totalPosts,
   ...props
 }: HubCoverProps) {
+  const [showAlert, setShowAlert] = useAtom(showAlertAtom);
+
   const {
     handleSubscribeToHub,
     error: subscribeError,
@@ -64,7 +66,7 @@ export function HubCover({
 
   let handleLikePost: () => Promise<void> | undefined;
   let liked = false;
-  let likeError = "";
+  let likeError: string | null = "";
   let likeIsLoading = false;
 
   if (hubPosts && hubPosts.length > 0) {
@@ -87,19 +89,44 @@ export function HubCover({
     ));
   };
 
-  const setShowAlert = useSetAtom(showAlertAtom);
-
   useEffect(() => {
-    if (subscribeLoading || subscribeError) {
+    if (subscribeError) {
       setShowAlert({
-        errorMessage: subscribeError,
-        isConfirming: subscribeLoading,
+        isSuccess: false,
+        message: subscribeError,
+        isConfirming: false,
+      });
+    } else if (subscribeLoading) {
+      setShowAlert({
+        isSuccess: false,
+        message: "",
+        isConfirming: true,
+      });
+    } else {
+      setShowAlert({
+        isSuccess: true,
+        message: "",
+        isConfirming: false,
       });
     }
-    if (likeIsLoading || likeError) {
+
+    if (likeError) {
       setShowAlert({
-        errorMessage: likeError,
-        isConfirming: likeIsLoading,
+        isSuccess: false,
+        message: likeError,
+        isConfirming: false,
+      });
+    } else if (likeIsLoading) {
+      setShowAlert({
+        isSuccess: false,
+        message: "",
+        isConfirming: true,
+      });
+    } else {
+      setShowAlert({
+        isSuccess: true,
+        message: "",
+        isConfirming: false,
       });
     }
   }, [subscribeLoading, subscribeError, likeIsLoading, likeError]);

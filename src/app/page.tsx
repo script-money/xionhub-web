@@ -1,222 +1,215 @@
 "use client";
-import Link from "next/link";
-import { useState } from "react";
 import {
   Abstraxion,
   useAbstraxionAccount,
   useAbstraxionSigningClient,
   useModal,
 } from "@burnt-labs/abstraxion";
-import { hubContractAddress } from "./layout";
-import type { ExecuteResult } from "@cosmjs/cosmwasm-stargate";
-import { EncodeObject } from "@cosmjs/proto-signing";
-import { MsgGrant } from "cosmjs-types/cosmos/authz/v1beta1/tx";
-import {
-  ContractExecutionAuthorization,
-  MaxCallsLimit,
-} from "cosmjs-types/cosmwasm/wasm/v1/authz";
-import { atom, useAtom } from "jotai";
-import { extractErrorName } from "~/lib/utils";
+import "@burnt-labs/ui/dist/index.css";
+import { useEffect, useLayoutEffect, useState } from "react";
+import { useAtom } from "jotai";
+import Image from "next/image";
+
+import useQueryHubList from "~/hooks/useQueryHubList";
+import { HubCover } from "~/components/hub/hub-cover";
+import { formatAddress } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
+import CreateHubForm from "~/components/hub/create-hub-form";
+import { HubAlert } from "~/components/hub/hub-alert";
+import CreatePostForm from "~/components/hub/create-post-form";
+import {
+  hasCacheAccountAtom,
+  hubInfosAtom,
+  showCreateHubAtom,
+  showCreatePostAtom,
+  userHasHubAtom,
+} from "~/atom";
+import { Rocket } from "lucide-react";
+import { Pencil2Icon } from "@radix-ui/react-icons";
 
-const executeResultAtom = atom<ExecuteResult | undefined>(undefined);
-const inProgressAtom = atom(false);
-
-export default function Page(): JSX.Element {
-  // Abstraxion hooks
+const MainPage = () => {
   const { data: account } = useAbstraxionAccount();
   const { client } = useAbstraxionSigningClient();
 
-  // General state hooks
-  const [, setShowModal]: [
-    boolean,
-    React.Dispatch<React.SetStateAction<boolean>>,
-  ] = useModal();
+  const [hubInfos, setHubInfos] = useAtom(hubInfosAtom);
 
-  const [loading, setLoading] = useState(false);
-  const [executeResult, setExecuteResult] = useAtom(executeResultAtom);
-  const [isInProgress, setInProgress] = useAtom(inProgressAtom);
+  const [showCreatePost, setShowCreatePost] = useAtom(showCreatePostAtom);
+  const [showCreateHub, setShowCreateHub] = useAtom(showCreateHubAtom);
 
-  const blockExplorerUrl = `https://explorer.burnt.com/xion-testnet-1/tx/${executeResult?.transactionHash}`;
+  const [userHasHub, setUserHasHub] = useAtom(userHasHubAtom);
+  const [hasCacheAccount, setHasCacheAccount] = useAtom(hasCacheAccountAtom);
 
-  async function createHub(
-    hub_name: string,
-    need_pay: { amount: string; denom: string },
-  ) {
-    setLoading(true);
-    const msg = {
-      create_hub: {
-        hub_name,
-        need_pay,
-      },
-    };
+  const [, setShowModal] = useModal();
 
-    try {
-      const createHubRes = await client?.execute(
-        account.bech32Address,
-        hubContractAddress,
-        msg,
-        {
-          amount: [{ amount: "0", denom: "uxion" }],
-          gas: "500000",
-        },
-        "", // memo is ""
-        [],
-      );
-      console.log(
-        "createHubRes event: ",
-        createHubRes?.events ?? "No create event",
-      );
-      setExecuteResult(createHubRes);
-    } catch (error) {
-      console.error("Error message:", extractErrorName(error as Error));
-    } finally {
-      setLoading(false);
+  const { queryHubList, isQueryingHubs } = useQueryHubList(client);
+
+  const [postIndices, setPostIndices] = useState(() => hubInfos.map(() => 0));
+
+  useLayoutEffect(() => {
+    // first launch page
+    console.log("Initing app");
+    if (localStorage.getItem("xion-authz-granter-account")) {
+      setHasCacheAccount(true);
     }
+  }, []);
+
+  useEffect(() => {
+    if (client) {
+      console.log("Querying Hubs");
+      handleQueryHubs();
+    }
+  }, [client]);
+
+  const handleQueryHubs = async () => {
+    if (!client) {
+      console.log("client is not ready");
+      return;
+    }
+    try {
+      const data = await queryHubList(1, 5);
+      if (data) {
+        setHubInfos(data);
+        if (data.map((hub) => hub.creator).includes(account.bech32Address)) {
+          setUserHasHub(true);
+        }
+        console.log("HubInfoList:", data);
+      } else {
+        console.log("No data found");
+      }
+    } catch (error) {
+      console.error("Error querying hub list:", error);
+    }
+  };
+
+  if (showCreatePost || showCreateHub) {
+    return (
+      <div className="flex h-screen w-full bg-black opacity-75">
+        <HubAlert />
+        {showCreateHub && <CreateHubForm client={client} account={account} />}
+        {showCreatePost && <CreatePostForm client={client} account={account} />}
+      </div>
+    );
   }
 
-  const generateContractGrant = (granter: string, grantee: string) => {
-    const timestampThreeMonthsFromNow = Math.floor(
-      new Date(new Date().setMonth(new Date().getMonth() + 3)).getTime() / 1000,
-    );
-
-    const contractExecutionAuthorizationValue =
-      ContractExecutionAuthorization.encode(
-        ContractExecutionAuthorization.fromPartial({
-          grants: [hubContractAddress].map((contractAddress) => ({
-            contract: contractAddress,
-            limit: {
-              typeUrl: "/cosmwasm.wasm.v1.MaxCallsLimit",
-              value: MaxCallsLimit.encode(
-                MaxCallsLimit.fromPartial({
-                  remaining: 255,
-                }),
-              ).finish(),
-            },
-            filter: {
-              typeUrl: "/cosmwasm.wasm.v1.AllowAllMessagesFilter",
-            },
-          })),
-        }),
-      ).finish();
-
-    const grantValue = MsgGrant.fromPartial({
-      grant: {
-        authorization: {
-          typeUrl: "/cosmwasm.wasm.v1.ContractExecutionAuthorization",
-          value: contractExecutionAuthorizationValue,
-        },
-        expiration: {
-          seconds: timestampThreeMonthsFromNow,
-        },
-      },
-      grantee,
-      granter,
-    });
-
-    return {
-      typeUrl: "/cosmos.authz.v1beta1.MsgGrant",
-      value: grantValue,
-    };
-  };
-
-  const grant = async () => {
-    setInProgress(true);
-    if (!client) {
-      throw new Error("no client");
-    }
-
-    if (!account) {
-      throw new Error("no account");
-    }
-
-    const granter = account.bech32Address;
-    const msg = generateContractGrant(granter, hubContractAddress);
-
-    try {
-      const foo = await client?.signAndBroadcast(
-        account.bech32Address,
-        [msg as EncodeObject],
-        {
-          amount: [{ amount: "0", denom: "uxion" }],
-          gas: "500000",
-        },
-      );
-      setInProgress(false);
-    } catch (error) {
-      setInProgress(false);
-      console.log("something went wrong: ", error);
-    }
-  };
-
   return (
-    <main className="m-auto flex min-h-screen max-w-xs flex-col items-center justify-center gap-4 p-4">
-      <h1 className="text-2xl font-bold tracking-tighter text-white">
-        ABSTRAXION
-      </h1>
-      <Button
-        onClick={() => {
-          setShowModal(true);
-        }}
-      >
-        {account.bech32Address ? (
-          <div className="flex items-center justify-center">VIEW ACCOUNT</div>
-        ) : (
-          "CONNECT"
-        )}
-      </Button>
-      {account.bech32Address && <Button onClick={() => account}></Button>}
-      <p>{account.bech32Address ?? "not connect"}</p>
-      {client ? (
-        <Button
-          disabled={loading}
-          onClick={() => {
-            void grant();
-          }}
-        >
-          {loading ? "LOADING..." : "GRANT"}
-        </Button>
-      ) : null}
-      {client ? (
-        <Button
-          disabled={loading}
-          onClick={() => {
-            void createHub("Test Hub", { amount: "0", denom: "uxion" });
-          }}
-        >
-          {loading ? "LOADING..." : "CREATE HUB"}
-        </Button>
-      ) : null}
+    <div className="flex flex-col items-start gap-y-2">
+      <HubAlert />
       <Abstraxion
         onClose={() => {
           setShowModal(false);
         }}
       />
-      {executeResult ? (
-        <div className="flex flex-col rounded border-2 border-black p-2 dark:border-white">
-          <div className="mt-2">
-            <p className="text-zinc-500">
-              <span className="font-bold">Transaction Hash</span>
-            </p>
-            <p className="text-sm">{executeResult.transactionHash}</p>
-          </div>
-          <div className="mt-2">
-            <p className=" text-zinc-500">
-              <span className="font-bold">Block Height:</span>
-            </p>
-            <p className="text-sm">{executeResult.height}</p>
-          </div>
-          <div className="mt-2">
-            <Link
-              className="text-black underline visited:text-purple-600 dark:text-white"
-              href={blockExplorerUrl}
-              target="_blank"
+      <div className="container flex h-16 flex-row items-center justify-between py-4">
+        <Image
+          style={{ filter: "invert(100%)" }}
+          src="/logo.svg"
+          width={128}
+          height={73}
+          alt="Logo"
+        />
+        <div className="ml-auto flex justify-end space-x-2">
+          {account.bech32Address ? (
+            <>
+              {!userHasHub ? (
+                <Button
+                  variant="ghost"
+                  className="hidden border text-xl md:block" // Hide on small screens
+                  onClick={() => setShowCreateHub(true)}
+                >
+                  Create Hub
+                </Button>
+              ) : (
+                <Button
+                  variant="ghost"
+                  className="hidden border text-xl md:block" // Hide on small screens
+                  onClick={() => setShowCreatePost(true)}
+                >
+                  Create Post
+                </Button>
+              )}
+              {!userHasHub ? (
+                <Button
+                  className="fixed bottom-4 right-4 h-16 w-16 rounded-full border md:hidden" // Show as floating button on small screens
+                  onClick={() => setShowCreateHub(true)}
+                  title="Create Hub"
+                >
+                  <Rocket name="create-hub" />
+                </Button>
+              ) : (
+                <Button
+                  className="fixed bottom-4 right-4 h-16 w-16 rounded-full border md:hidden" // Show as floating button on small screens
+                  onClick={() => setShowCreatePost(true)}
+                  title="Create Post"
+                >
+                  <Pencil2Icon name="create-post" />
+                </Button>
+              )}
+              <Button
+                variant="secondary"
+                className="border text-xl"
+                onClick={() => setShowModal(true)}
+              >
+                {formatAddress(account.bech32Address)}
+              </Button>
+            </>
+          ) : (
+            <Button
+              variant="secondary"
+              onClick={() => setShowModal(true)}
+              className="border text-xl"
             >
-              View in Block Explorer
-            </Link>
-          </div>
+              Login
+            </Button>
+          )}
         </div>
-      ) : null}
-    </main>
+      </div>
+
+      {account.bech32Address ? (
+        <>
+          {isQueryingHubs ? (
+            <div className="flex h-screen w-full items-center justify-center">
+              <h2 className="text-xl md:text-3xl">Querying data...</h2>
+            </div>
+          ) : hubInfos.length > 0 ? (
+            <div className="container flex flex-col items-center gap-y-2">
+              {hubInfos.map((hub, hubIndex) => (
+                <HubCover
+                  key={hub.creator}
+                  isSubscribed={hub.subscribers.includes(account.bech32Address)}
+                  client={client}
+                  account={account}
+                  hubName={hub.name}
+                  creator={hub.creator}
+                  payment={`${Number(hub.payment.amount) / 1e6} ${hub.payment.denom}`}
+                  subscribers={hub.subscribers.length}
+                  hubPosts={hub.posts}
+                  postIndex={postIndices[hubIndex] ?? 0}
+                  setPostIndex={(newIndex) => {
+                    const newPostIndices = [...postIndices];
+                    newPostIndices[hubIndex] = newIndex;
+                    setPostIndices(newPostIndices);
+                  }}
+                  totalPosts={hub.posts.length}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="flex h-screen w-full items-center justify-center">
+              <h2 className="text-xl md:text-3xl">
+                Click "Create Hub" be the first
+              </h2>
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="flex h-screen w-full items-center justify-center">
+          <h2 className="text-3xl">
+            {hasCacheAccount ? "Logging in, please wait" : "Please login first"}
+          </h2>
+        </div>
+      )}
+    </div>
   );
-}
+};
+
+export default MainPage;

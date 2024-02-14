@@ -58,7 +58,7 @@ const CreatePostForm: React.FC<{ client: any; account: any }> = ({
     client,
     account,
   );
-  const setShowAlert = useSetAtom(showAlertAtom);
+  const [showAlert, setShowAlert] = useAtom(showAlertAtom);
 
   useEffect(() => {
     // Sync the state with the postContentAtom
@@ -66,22 +66,28 @@ const CreatePostForm: React.FC<{ client: any; account: any }> = ({
   }, [postContent]);
 
   useEffect(() => {
-    if (loading || error) {
+    if (error) {
       setShowAlert({
         isSuccess: false,
-        errorMessage: error,
-        isConfirming: loading,
-      });
-    }
-    if (txHash !== "") {
-      console.log("txHash:", txHash);
-      setShowAlert({
-        isSuccess: true,
-        errorMessage: "",
+        message: error,
         isConfirming: false,
       });
+    } else if (loading) {
+      setShowAlert({
+        isSuccess: false,
+        message: "",
+        isConfirming: true,
+      });
+    } else if (txHash) {
+      setShowAlert({
+        isSuccess: true,
+        message: txHash,
+        isConfirming: false,
+      });
+      setShowCreatePost(false);
     }
   }, [loading, error, txHash]);
+
   return (
     <div className="container flex items-center justify-center">
       <Card className="relative w-full p-4 md:w-[618px]">

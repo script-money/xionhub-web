@@ -4,14 +4,14 @@ import { Address } from "~/interface";
 import { extractErrorName } from "~/lib/utils";
 
 export function useSubscribeToHub(client: any, account: any) {
-  const [error, setError] = useState<string>("");
+  const [error, setError] = useState<string | null>(null);
   const [subscribed, setSubscribed] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
 
   const handleSubscribeToHub = useCallback(
     async (hubAddress: Address) => {
       if (!client || !account || account.bech32Address === "") {
-        console.error("Not logged in");
+        setError("Not logged in");
         return;
       }
 
@@ -28,6 +28,7 @@ export function useSubscribeToHub(client: any, account: any) {
           "auto",
         );
         console.log("Subscribe to Hub:", data);
+        setError("");
         setSubscribed(true);
       } catch (error) {
         const errorMessage = extractErrorName(error as Error);

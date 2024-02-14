@@ -4,49 +4,42 @@ import { CheckIcon, Cross2Icon, GlobeIcon } from "@radix-ui/react-icons";
 
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 
-interface AlertProps {
+export interface AlertProps {
   isSuccess: boolean;
-  errorMessage?: string;
-  isConfirming?: boolean;
+  message: string;
+  isConfirming: boolean;
 }
 
-export const showAlertAtom = atom<AlertProps>({
-  isSuccess: false,
-  errorMessage: "",
-  isConfirming: false,
-});
+export const showAlertAtom = atom<AlertProps | null>(null);
 
 export const HubAlert = () => {
   const [showAlert, setShowAlert] = useAtom(showAlertAtom);
 
   useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (showAlert.errorMessage || showAlert.isSuccess) {
-      timer = setTimeout(() => {
-        setShowAlert((prev) => ({
-          ...prev,
-          errorMessage: "",
-          isSuccess: false,
-        }));
-      }, 5000);
+    if (showAlert) {
+      const timer = setTimeout(() => {
+        setShowAlert(null);
+      }, 3000);
+      return () => clearTimeout(timer);
     }
-    return () => timer && clearTimeout(timer);
   }, [showAlert, setShowAlert]);
 
-  const isError = showAlert.errorMessage !== "";
-  const isConfirming = showAlert.isConfirming;
+  if (!showAlert) return null;
 
-  let alertTitle;
-  let IconComponent;
+  const { isSuccess, message, isConfirming } = showAlert;
+  const isError = !!message;
+
+  let alertTitle: string;
+  let Icon: JSX.Element | null = null;
   if (isConfirming) {
     alertTitle = "Confirming...";
-    IconComponent = GlobeIcon;
+    Icon = <GlobeIcon className="mr-2 inline-block" />;
   } else if (isError) {
-    alertTitle = "Broadcast failed";
-    IconComponent = Cross2Icon;
-  } else if (showAlert.isSuccess) {
-    alertTitle = "Broadcast success";
-    IconComponent = CheckIcon;
+    alertTitle = "failed";
+    Icon = <Cross2Icon className="mr-2 inline-block" />;
+  } else if (isSuccess) {
+    alertTitle = "success";
+    Icon = <CheckIcon className="mr-2 inline-block" />;
   } else {
     return null;
   }
@@ -57,23 +50,14 @@ export const HubAlert = () => {
       ? "text-red-500"
       : "text-green-500";
 
+  const variant = isConfirming || isSuccess ? "default" : "destructive";
+
   return (
-    <>
-      {(isConfirming || isError || showAlert.isSuccess) && (
-        <Alert
-          variant={
-            isConfirming ? "default" : isError ? "destructive" : "default"
-          }
-          className="fixed right-0 top-0 z-50 m-8 w-[200px]"
-        >
-          <AlertTitle className={titleColor}>
-            <IconComponent className="mr-2 inline-block" /> {alertTitle}
-          </AlertTitle>
-          {isError && !isConfirming && (
-            <AlertDescription>{showAlert.errorMessage}</AlertDescription>
-          )}
-        </Alert>
-      )}
-    </>
+    <Alert variant={variant} className="fixed right-0 top-0 z-50 m-8 w-[200px]">
+      <AlertTitle className={titleColor}>
+        {Icon} {alertTitle}
+      </AlertTitle>
+      {isError && <AlertDescription>{message}</AlertDescription>}
+    </Alert>
   );
 };
