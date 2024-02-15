@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createEditor, Node, Descendant } from "slate";
 import { Slate, Editable, withReact } from "slate-react";
 import { atomWithStorage } from "jotai/utils";
-import { useAtom, useSetAtom } from "jotai";
+import { useAtom } from "jotai";
 import { withHistory } from "slate-history";
 
 import { useCreatePost } from "~/hooks/useCreatePost";
@@ -10,9 +10,9 @@ import { Card } from "../ui/card";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Label } from "../ui/label";
-import { showAlertAtom } from "./hub-alert";
 import { showCreatePostAtom } from "~/atom";
 import { Cross1Icon } from "@radix-ui/react-icons";
+import { ToastType, displayAlert } from "../alert";
 
 // Define a serializing function that takes a value and returns a string.
 const serialize = (value: Descendant[]) => {
@@ -58,7 +58,6 @@ const CreatePostForm: React.FC<{ client: any; account: any }> = ({
     client,
     account,
   );
-  const [showAlert, setShowAlert] = useAtom(showAlertAtom);
 
   useEffect(() => {
     // Sync the state with the postContentAtom
@@ -67,23 +66,14 @@ const CreatePostForm: React.FC<{ client: any; account: any }> = ({
 
   useEffect(() => {
     if (error) {
-      setShowAlert({
-        isSuccess: false,
-        message: error,
-        isConfirming: false,
-      });
+      displayAlert(
+        { message: "Create Post failed", learnMoreUrl: error },
+        ToastType.ERROR,
+      );
     } else if (loading) {
-      setShowAlert({
-        isSuccess: false,
-        message: "",
-        isConfirming: true,
-      });
+      displayAlert({ message: "Creating Post..." }, ToastType.LOADING);
     } else if (txHash) {
-      setShowAlert({
-        isSuccess: true,
-        message: txHash,
-        isConfirming: false,
-      });
+      displayAlert({ message: "Create post success" }, ToastType.SUCCESS);
       setShowCreatePost(false);
     }
   }, [loading, error, txHash]);

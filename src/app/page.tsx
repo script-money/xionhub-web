@@ -15,7 +15,6 @@ import { HubCover } from "~/components/hub/hub-cover";
 import { formatAddress } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import CreateHubForm from "~/components/hub/create-hub-form";
-import { HubAlert } from "~/components/hub/hub-alert";
 import CreatePostForm from "~/components/hub/create-post-form";
 import {
   hasCacheAccountAtom,
@@ -88,7 +87,6 @@ const MainPage = () => {
   if (showCreatePost || showCreateHub) {
     return (
       <div className="flex h-screen w-full bg-black opacity-75">
-        <HubAlert />
         {showCreateHub && <CreateHubForm client={client} account={account} />}
         {showCreatePost && <CreatePostForm client={client} account={account} />}
       </div>
@@ -97,7 +95,6 @@ const MainPage = () => {
 
   return (
     <div className="flex flex-col items-start gap-y-2">
-      <HubAlert />
       <Abstraxion
         onClose={() => {
           setShowModal(false);

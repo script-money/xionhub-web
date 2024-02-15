@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useAtom, useSetAtom } from "jotai";
 
 import { useCreateHub } from "~/hooks/useCreateHub";
-import { showAlertAtom } from "./hub-alert";
+import { ToastType, displayAlert, showAlertAtom } from "../alert";
 import { Button } from "~/components/ui/button";
 import {
   Form,
@@ -36,20 +36,12 @@ const CreateHubForm: React.FC<{ client: any; account: any }> = ({
 
   useEffect(() => {
     if (!loading && error !== "" && error !== null) {
-      setShowAlert({
-        isSuccess: false,
-        message: error,
-        isConfirming: loading,
-      });
+      displayAlert({ message: error, learnMoreUrl: "" }, ToastType.ERROR);
     } else if (!loading && error == "") {
-      setShowAlert({
-        isSuccess: true,
-        message: "",
-        isConfirming: false,
-      });
+      displayAlert({ message: "Create Hub success" }, ToastType.SUCCESS);
       setShowCreateHub(false);
     }
-  }, [loading, error, setShowAlert, setShowCreateHub]);
+  }, [loading, error, setShowCreateHub]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     defaultValues: {

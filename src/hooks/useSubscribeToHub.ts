@@ -7,6 +7,7 @@ export function useSubscribeToHub(client: any, account: any) {
   const [error, setError] = useState<string | null>(null);
   const [subscribed, setSubscribed] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
+  const [txHash, setTxHash] = useState<string>("");
 
   const handleSubscribeToHub = useCallback(
     async (hubAddress: Address) => {
@@ -28,6 +29,7 @@ export function useSubscribeToHub(client: any, account: any) {
           "auto",
         );
         console.log("Subscribe to Hub:", data);
+        setTxHash(data.transactionHash);
         setError("");
         setSubscribed(true);
       } catch (error) {
@@ -40,5 +42,5 @@ export function useSubscribeToHub(client: any, account: any) {
     [client, account],
   );
 
-  return { handleSubscribeToHub, subscribed, error, loading };
+  return { handleSubscribeToHub, txHash, subscribed, error, loading };
 }

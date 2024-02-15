@@ -18,10 +18,9 @@ import {
 } from "~/components/ui/card";
 import { Fragment, useEffect } from "react";
 import { useSubscribeToHub } from "~/hooks/useSubscribeToHub";
-import { showAlertAtom } from "./hub-alert";
+import { ToastType, displayAlert } from "../alert";
 import { useLikePost } from "~/hooks/useLikePost";
 import { Post } from "~/interface";
-import { useAtom, useSetAtom } from "jotai";
 
 type CardProps = React.ComponentProps<typeof Card>;
 type HubCoverProps = CardProps & {
@@ -53,10 +52,9 @@ export function HubCover({
   totalPosts,
   ...props
 }: HubCoverProps) {
-  const [showAlert, setShowAlert] = useAtom(showAlertAtom);
-
   const {
     handleSubscribeToHub,
+    txHash: subscribeTxHash,
     error: subscribeError,
     loading: subscribeLoading,
   } = useSubscribeToHub(client, account);
@@ -66,6 +64,7 @@ export function HubCover({
 
   let handleLikePost: () => Promise<void> | undefined;
   let liked = false;
+  let likeTxHash: string | null = "";
   let likeError: string | null = "";
   let likeIsLoading = false;
 
@@ -73,6 +72,7 @@ export function HubCover({
     const currentPost = hubPosts[postIndex];
     ({
       handleLikePost,
+      txHash: likeTxHash,
       liked,
       error: likeError,
       loading: likeIsLoading,
@@ -91,45 +91,34 @@ export function HubCover({
 
   useEffect(() => {
     if (subscribeError) {
-      setShowAlert({
-        isSuccess: false,
-        message: subscribeError,
-        isConfirming: false,
-      });
+      displayAlert(
+        { message: subscribeError, learnMoreUrl: "" },
+        ToastType.ERROR,
+      );
     } else if (subscribeLoading) {
-      setShowAlert({
-        isSuccess: false,
-        message: "",
-        isConfirming: true,
-      });
-    } else {
-      setShowAlert({
-        isSuccess: true,
-        message: "",
-        isConfirming: false,
-      });
+      displayAlert({ message: "Subscribing to Hub..." }, ToastType.LOADING);
+    } else if (subscribeTxHash) {
+      displayAlert(
+        { message: "Subscribed to Hub successfully" },
+        ToastType.SUCCESS,
+      );
     }
 
     if (likeError) {
-      setShowAlert({
-        isSuccess: false,
-        message: likeError,
-        isConfirming: false,
-      });
+      displayAlert({ message: likeError, learnMoreUrl: "" }, ToastType.ERROR);
     } else if (likeIsLoading) {
-      setShowAlert({
-        isSuccess: false,
-        message: "",
-        isConfirming: true,
-      });
-    } else {
-      setShowAlert({
-        isSuccess: true,
-        message: "",
-        isConfirming: false,
-      });
+      displayAlert({ message: "Liking Post..." }, ToastType.LOADING);
+    } else if (likeTxHash) {
+      displayAlert({ message: "Liked Post successfully" }, ToastType.SUCCESS);
     }
-  }, [subscribeLoading, subscribeError, likeIsLoading, likeError]);
+  }, [
+    subscribeLoading,
+    subscribeError,
+    subscribeTxHash,
+    likeIsLoading,
+    likeError,
+    likeTxHash,
+  ]);
 
   return (
     <Card className={cn("w-full md:w-[532px]", className)} {...props}>

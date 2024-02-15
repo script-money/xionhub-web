@@ -29,6 +29,7 @@
     "react-dom": "18.2.0",
     "react-hook-form": "^7.50.1",
     "react-resizable-panels": "^2.0.5",
+    "react-toastify": "^10.0.4",
     "slate": "^0.102.0",
     "slate-history": "^0.100.0",
     "slate-react": "^0.102.0",

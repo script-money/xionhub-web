@@ -5,6 +5,7 @@ import { extractErrorName } from "~/lib/utils";
 export function useLikePost(postId: string, client: any, account: any) {
   const [error, setError] = useState<string | null>(null);
   const [liked, setLiked] = useState<boolean>(false);
+  const [txHash, setTxHash] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
 
   const handleLikePost = useCallback(async () => {
@@ -25,6 +26,7 @@ export function useLikePost(postId: string, client: any, account: any) {
         "auto",
       );
       console.log("Like Post:", data);
+      setTxHash(data.transactionHash);
       setError("");
       setLiked(true);
     } catch (error) {
@@ -35,5 +37,5 @@ export function useLikePost(postId: string, client: any, account: any) {
     }
   }, [client, account, postId]);
 
-  return { handleLikePost, liked, error, loading };
+  return { handleLikePost, txHash, liked, error, loading };
 }
