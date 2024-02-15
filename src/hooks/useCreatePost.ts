@@ -4,7 +4,7 @@ import { XIONHUB_ADDRESS } from "~/constant";
 import { extractErrorName } from "~/lib/utils";
 
 export function useCreatePost(client: any, account: any) {
-  const [error, setError] = useState<string>("");
+  const [error, setError] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
 
@@ -32,6 +32,7 @@ export function useCreatePost(client: any, account: any) {
         );
         console.log("Create Post:", data); // 5 seconds later, the post will be created
         setTxHash(data.transactionHash);
+        setError("");
       } catch (error) {
         const errorMessage = extractErrorName(error as Error);
         setError(errorMessage ?? "unknown error");

@@ -3,7 +3,7 @@ import { XIONHUB_ADDRESS } from "~/constant";
 import { extractErrorName } from "~/lib/utils";
 
 export const useCreateHub = (client: any, account: any) => {
-  const [error, setError] = useState<string>("");
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
 
   const handleCreateHub = useCallback(
@@ -27,6 +27,7 @@ export const useCreateHub = (client: any, account: any) => {
           "auto",
         );
         console.log("Create Hub:", data);
+        setError("");
       } catch (error) {
         const errorMessage = extractErrorName(error as Error);
         setError(errorMessage ?? "unknown error");

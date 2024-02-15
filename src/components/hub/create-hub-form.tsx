@@ -35,13 +35,13 @@ const CreateHubForm: React.FC<{ client: any; account: any }> = ({
   const [showCreateHub, setShowCreateHub] = useAtom(showCreateHubAtom);
 
   useEffect(() => {
-    if (error) {
+    if (!loading && error !== "" && error !== null) {
       setShowAlert({
         isSuccess: false,
         message: error,
         isConfirming: loading,
       });
-    } else if (!loading) {
+    } else if (!loading && error == "") {
       setShowAlert({
         isSuccess: true,
         message: "",

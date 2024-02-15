@@ -6,7 +6,7 @@ import {
   useModal,
 } from "@burnt-labs/abstraxion";
 import "@burnt-labs/ui/dist/index.css";
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useAtom } from "jotai";
 import Image from "next/image";
 
@@ -45,11 +45,15 @@ const MainPage = () => {
 
   const [postIndices, setPostIndices] = useState(() => hubInfos.map(() => 0));
 
+  const initRef = useRef(false);
+
   useLayoutEffect(() => {
-    // first launch page
-    console.log("Initing app");
-    if (localStorage.getItem("xion-authz-granter-account")) {
-      setHasCacheAccount(true);
+    if (!initRef.current) {
+      console.log("Initing app");
+      if (localStorage.getItem("xion-authz-granter-account")) {
+        setHasCacheAccount(true);
+      }
+      initRef.current = true;
     }
   }, []);
 

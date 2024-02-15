@@ -8,7 +8,7 @@ export function useUserSubscriptions(
 ) {
   const [subscriptions, setSubscriptions] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   const fetchSubscriptions = useCallback(async () => {
     if (!client || !user) {
