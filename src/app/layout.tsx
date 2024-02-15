@@ -14,6 +14,7 @@ export default function RootLayout({
         <AbstraxionProvider
           config={{
             contracts: [XIONHUB_ADDRESS],
+            rpcUrl: "https://xion-testnet-rpc.polkachu.com/",
           }}
         >
           {children}
